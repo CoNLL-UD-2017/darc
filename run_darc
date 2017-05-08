@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ $# -ne 2 ]
+then
+    echo "usage: ./run_darc input_dir output_dir"
+    exit 1
+fi
+
+cd /home/darc/darc/ &&
+    python3 4.task.py $1 &&
+    bash 5.udpipe.sh &&
+    python3 6.darc.py $1 $2
