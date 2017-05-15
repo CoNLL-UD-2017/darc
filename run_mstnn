@@ -1,0 +1,58 @@
+#!/usr/bin/fish
+
+begin
+	set -l input_dir $argv[1]
+	set -l output_dir $argv[2]
+	
+	set -l udpipe_models_dir "darc/conll17/udpipe_model"
+	if not test -d $udpipe_models_dir
+		echo "could not find the udpipe models dir"
+		exit
+	end
+	
+	set -l udpiped_dir "darc/conll17/udpiped_test"
+	if not test -d $udpiped_dir
+		echo "could not find the dir for the udpiped datasets"
+		exit
+	end
+	
+	set -l models_dir "mstnn/models"
+	if not test -d $models_dir
+		echo "could not find the mstnn models dir"
+		exit
+	end
+	
+	set -l unlab_output_dir "mstnn/output"
+	if not test -d $unlab_output_dir
+		echo "could not find the mstnn output dir"
+		exit
+	end
+	
+	set -l metadata_file "$input_dir/metadata.json"
+	if not test -f $metadata_file
+		echo "could not find the metadata json file"
+		exit
+	end
+	
+	for row in (jq --raw-output '.[] | [.ltcode, .lcode, .rawfile, .psegmorfile, .outfile] | join(",")' $metadata_file)
+		set -l code (echo $row | cut -d "," -f 1)
+		set -l lang_code (echo $row | cut -d "," -f 2)
+		set -l raw_file (echo $row | cut -d "," -f 3)
+		set -l psegmor_file (echo $row | cut -d "," -f 4)
+		set -l out_file (echo $row | cut -d "," -f 5)
+		
+		if test -f $udpipe_models_dir/$code
+			udpipe --input horizontal --tokenize --tag --outfile $udpiped_dir/$out_file $udpipe_models_dir/$code".udpipe" $input_dir/$raw_file
+		else
+			cp $input_dir/$psegmor_file $udpiped_dir/$out_file
+		end
+		
+		if not test -f $models_dir/$code
+			set code $lang_code
+		end
+		
+		mstnn/meta/env/bin/python mstnn/manage.py parse $models_dir/$code $udpiped_dir/$out_file $unlab_output_dir/$out_file
+		
+		labeler/meta/env/bin/python labeler/labeler.py -i $unlab_output_dir/$out_file -m labeler/models/$code.model -l labeler/labels/$code.labels -o $output_dir/$out_file
+	end
+end
