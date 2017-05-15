@@ -1,0 +1,3 @@
+[submodule "mstnn"]
+	path = mstnn
+	url = https://github.com/pavelsof/mstnn
