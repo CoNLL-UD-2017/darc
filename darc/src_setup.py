@@ -56,8 +56,7 @@ class Setup(object):
         feat2idx = {Sent.dumb: 0, Sent.root: 1}
         drel2idx = {Sent.dumb: 0}
         idx2tran = [('shift', None)]
-        if not hasattr(sents, '__len__'):
-            sents = list(sents)
+        if not hasattr(sents, '__len__'): sents = list(sents)
         for sent in sents:
             it = zip(sent.upostag, sent.feats, sent.deprel)
             next(it)
@@ -218,7 +217,6 @@ class Setup(object):
             o = Dense(
                 units=hidden_units,
                 activation=activation,
-                bias_initializer='ones' if 'relu' == activation else 'zeros',
                 kernel_initializer=init,
                 kernel_constraint=hidden_const,
                 name="hidden{}".format(1 + hid))(o)
@@ -267,50 +265,53 @@ class Setup(object):
 
         """
         # 18 features (Chen & Manning 2014)
-        #  0: s0       1: s1       2: s0l1     3: s1l1     4: s0r1     5: s1r1
-        #  6: s0l0     7: s1l0     8: s0r0     9: s1r0
-        # 10: s0l0l1  11: s1l0l1  12: s0r0r1  13: s1r0r1
-        # 14: s2      15: i0      16: i1      17: i2
+        #  0: s0       1: s1       2: s2
+        #  3: s0l1     4: s1l1     5: s0r1     6: s1r1
+        #  7: s0l0     8: s1l0     9: s0r0    10: s1r0
+        # 11: s0l0l1  12: s1l0l1  13: s0r0r1  14: s1r0r1
+        # 15: i0      16: i1      17: i2
         i, s, g = config.input, config.stack, config.graph
         x = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]
         # node 0 in each sent is dumb
-        if 1 <= len(s):
+        len_s = len(s)
+        if 1 <= len_s:
             x[0] = s[-1]  # s0
             y = g[x[0]]
             if y:
                 if 2 <= len(y):
-                    x[2] = y[1]  # s0l1
-                    x[4] = y[-2]  # s0r1
-                x[6] = y[0]  # s0l0
-                x[8] = y[-1]  # s0r0
-                y = g[x[6]]
+                    x[3] = y[1]  # s0l1
+                    x[5] = y[-2]  # s0r1
+                x[7] = y[0]  # s0l0
+                x[9] = y[-1]  # s0r0
+                y = g[x[7]]
                 if y:
-                    x[10] = y[0]  # s0l0l1
-                y = g[x[8]]
+                    x[11] = y[0]  # s0l0l1
+                y = g[x[9]]
                 if y:
-                    x[12] = y[-1]  # s0r0r1
-            if 2 <= len(s):
+                    x[13] = y[-1]  # s0r0r1
+            if 2 <= len_s:
                 x[1] = s[-2]  # s1
                 y = g[x[1]]
                 if y:
                     if 2 <= len(y):
-                        x[3] = y[1]  # s1l1
-                        x[5] = y[-2]  # s1r1
-                    x[7] = y[0]  # s1l0
-                    x[9] = y[-1]  # s1r0
-                    y = g[x[7]]
+                        x[4] = y[1]  # s1l1
+                        x[6] = y[-2]  # s1r1
+                    x[8] = y[0]  # s1l0
+                    x[10] = y[-1]  # s1r0
+                    y = g[x[8]]
                     if y:
-                        x[11] = y[0]  # s1l0l1
-                    y = g[x[9]]
+                        x[12] = y[0]  # s1l0l1
+                    y = g[x[10]]
                     if y:
-                        x[13] = y[-1]  # s1r0r1
-                if 3 <= len(s):
-                    x[14] = s[-3]  # s2
-        if 1 <= len(i):
+                        x[14] = y[-1]  # s1r0r1
+                if 3 <= len_s:
+                    x[2] = s[-3]  # s2
+        len_i = len(i)
+        if 1 <= len_i:
             x[15] = i[-1]  # i0
-            if 2 <= len(i):
+            if 2 <= len_i:
                 x[16] = i[-2]  # i1
-                if 3 <= len(i):
+                if 3 <= len_i:
                     x[17] = i[-3]  # i2
         # form lemm upos
         form2idx = self.form2idx.get
@@ -328,18 +329,18 @@ class Setup(object):
         # drel
         drel2idx = self.drel2idx
         drel = config.deprel
-        drel = np.fromiter((drel2idx[drel[i]] for i in x[2:]), np.uint8)
+        drel = np.fromiter((drel2idx[drel[i]] for i in x[3:-3]), np.uint8)
         # feats
         feats = config.sent.feats
         feats = [feats[i] for i in x]
         # special treatments for root
-        if 2 <= len(s) and 0 == s[-2]:
+        if 3 >= len_s:
+            r = len_s - 1
             root = Sent.root
-            # s1 at idx 1 is root
-            form[1] = form2idx(root)
-            lemm[1] = lemm2idx(root)
-            upos[1] = upos2idx(root)
-            feats[1] = root
+            form[r] = form2idx(root)
+            lemm[r] = lemm2idx(root)
+            upos[r] = upos2idx(root)
+            feats[r] = root
         # set-valued feat (Alberti et al. 2015)
         feat2idx = self.feat2idx
         feat = np.zeros((len(feats), len(feat2idx)), np.float32)

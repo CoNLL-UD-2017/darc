@@ -8,6 +8,10 @@ del cols
 Sent.obsc = "_"
 Sent.root = "\xa0"
 Sent.dumb = ""
+# obsc & root & dumb are all sentinal symbols.
+# dumb stands for dummy or missing values, including the pseudo root;
+# root is recognized by the parser when a dummy value is at the root position;
+# obsc is used for unknown or rare values.
 
 
 def cons(lines, dumb=Sent.dumb):

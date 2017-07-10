@@ -24,7 +24,7 @@ def parse_args():
     parser.add_argument('--output-const', default='none', help="default: none")
     parser.add_argument('--optimizer', default='adamax', help="default: adamax")
     parser.add_argument('--batch', type=int, default=32, help="default: 32")
-    parser.add_argument('--epochs', type=int, default=12, help="default: 16")
+    parser.add_argument('--epochs', type=int, default=16, help="default: 16")
     parser.add_argument('--save-for-each', action='store_true')
     args = parser.parse_args()
     if not args.verbose:

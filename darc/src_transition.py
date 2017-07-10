@@ -41,11 +41,11 @@ class Config(object):
             raise TypeError("unknown act: {}".format(act))
 
     def shift(self, _=None):
-        """(σ, [i|β], A) ⇒ ([σ|i], β, A)"""
+        """(σ, i|β, A) ⇒ (σ|i, β, A)"""
         self.stack.append(self.input.pop())
 
     def right(self, deprel):
-        """([σ|i, j], B, A) ⇒ ([σ|i], B, A∪{(i, l, j)})"""
+        """(σ|i|j, β, A) ⇒ (σ|i, B, A ∪ {(i, l, j)})"""
         j = self.stack.pop()
         i = self.stack[-1]
         insort_right(self.graph[i], j)
@@ -53,7 +53,7 @@ class Config(object):
         self.deprel[j] = deprel
 
     def left(self, deprel):
-        """([σ|i, j], B, A) ⇒ ([σ|j], B, A∪{(j, l, i)})"""
+        """(σ|i|j, β, A) ⇒ (σ|j, β, A ∪ {(j, l, i)})"""
         j = self.stack[-1]
         i = self.stack.pop(-2)
         insort_right(self.graph[j], i)
@@ -61,7 +61,7 @@ class Config(object):
         self.deprel[i] = deprel
 
     def swap(self, _=None):
-        """([σ|i,j],β,A) ⇒ ([σ|j],[i|β],A)"""
+        """(σ|i|j, β, A) ⇒ (σ|j, i|β, A)"""
         self.input.append(self.stack.pop(-2))
 
     def finish(self):
