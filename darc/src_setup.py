@@ -55,7 +55,6 @@ class Setup(object):
         upos2idx = {Sent.dumb: 0, Sent.root: 1, 'X': 2}
         feat2idx = {Sent.dumb: 0, Sent.root: 1}
         drel2idx = {Sent.dumb: 0}
-        idx2tran = [('shift', None)]
         if not hasattr(sents, '__len__'): sents = list(sents)
         for sent in sents:
             it = zip(sent.upostag, sent.feats, sent.deprel)
@@ -68,10 +67,8 @@ class Setup(object):
                         feat2idx[feat] = len(feat2idx)
                 if drel not in drel2idx:
                     drel2idx[drel] = len(drel2idx)
-                    idx2tran.append(('left', drel))
-                    idx2tran.append(('right', drel))
-        if not proj:
-            idx2tran.append(('swap', None))
+        idx2tran = [('shift', None)]
+        if not proj: idx2tran.append(('swap', None))
         # x y
         self = Setup(
             form2idx=form2idx, form_emb=form_emb,
@@ -80,7 +77,7 @@ class Setup(object):
             drel2idx=drel2idx,
             feat2idx=feat2idx,
             idx2tran=idx2tran)
-        tran2idx = {tran: idx for idx, tran in enumerate(self.idx2tran)}
+        tran2idx = {tran: idx for idx, tran in enumerate(idx2tran)}
         data = [],     [],     [],     [],     [],     []
         name = "form", "lemm", "upos", "drel", "feat"
         form_append, lemm_append, upos_append, drel_append, feat_append, \
@@ -99,7 +96,13 @@ class Setup(object):
                 upos_append(feature[2])
                 drel_append(feature[3])
                 feat_append(feature[4])
-                tran_append(tran2idx[tran])
+                try:
+                    tran_idx = tran2idx[tran]
+                except KeyError:
+                    idx2tran.append(tran)
+                    tran_idx = tran2idx[tran] = len(tran2idx)
+                finally:
+                    tran_append(tran_idx)
                 getattr(config, tran[0])(tran[1])
         self.x = {n: np.concatenate(d) for n, d in zip(name, data)}
         self.y = np.array(data[-1], np.uint8)
