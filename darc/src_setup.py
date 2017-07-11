@@ -80,8 +80,7 @@ class Setup(object):
             drel2idx=drel2idx,
             feat2idx=feat2idx,
             idx2tran=idx2tran)
-        tran_idx = np.eye(len(idx2tran), dtype=np.float32)
-        tran2idx = {tran: tran_idx[idx] for idx, tran in enumerate(idx2tran)}
+        tran2idx = {tran: idx for idx, tran in enumerate(self.idx2tran)}
         data = [],     [],     [],     [],     [],     []
         name = "form", "lemm", "upos", "drel", "feat"
         form_append, lemm_append, upos_append, drel_append, feat_append, \
@@ -103,7 +102,7 @@ class Setup(object):
                 tran_append(tran2idx[tran])
                 getattr(config, tran[0])(tran[1])
         self.x = {n: np.concatenate(d) for n, d in zip(name, data)}
-        self.y = np.array(data[-1], np.float32)
+        self.y = np.array(data[-1], np.uint8)
         return self
 
     @staticmethod
@@ -229,7 +228,7 @@ class Setup(object):
             kernel_constraint=output_const,
             name="output")(o)
         m = Model(i, o, name="darc")
-        m.compile(optimizer, 'categorical_crossentropy')
+        m.compile(optimizer, 'sparse_categorical_crossentropy')
         return m
 
     def train(self, model, *args, **kwargs):
