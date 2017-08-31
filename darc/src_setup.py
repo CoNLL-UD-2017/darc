@@ -245,8 +245,7 @@ class Setup(object):
             if 2 > len(config.stack):
                 config.shift()
                 continue
-            prob = model.predict(self.feature(config), 1).ravel()
-            for r in prob.argsort()[::-1]:
+            for r in (- model.predict(self.feature(config), 1).ravel()).argsort():
                 act, arg = self.idx2tran[r]
                 if config.doable(act):
                     getattr(config, act)(arg)
@@ -257,11 +256,11 @@ class Setup(object):
         return config.finish()
 
     def feature(self, config, named=True):
-        """-> [numpy.ndarray] :as form, upos, drel, feat
+        """-> [numpy.ndarray] :as form, lemm, upos, drel, feat
 
-        assert form.shape == upos.shape == (18, )
+        assert form.shape == lemm.shape == upos.shape == (18, )
 
-        assert drel.shape == (16, )
+        assert drel.shape == (12, )
 
         assert feat.shape == (18 * len(self.feat2idx), )
 
